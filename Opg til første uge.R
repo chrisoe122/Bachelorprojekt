@@ -37,6 +37,12 @@ abline(0,1)
 mean(logp)
 var(logp)
 
+#Med andet sigma
+m<- 
+n<- 15374
+sigma<-(-n+sqrt(2*n*m+n^2))/n
+
+
 #tal fra 2020
 logp2020<-logp[15102:15354]
 mean(logp2020)
@@ -45,8 +51,8 @@ var(logp2020)
 #skyldes at de rige er blevet rigere (Meget cirkelargument)
 
 #Vores mu er
-mu <- mean(logp)+var(logp)*0.5
-
+mu <- mean(logp)+sd(logp)*0.5
+mu
 
 
 # opg. h
