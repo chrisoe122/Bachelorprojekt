@@ -5,14 +5,18 @@ library(dplyr)
 #Simulering af S
 Euler<-function(delta_t,k,t0=0,y0=10,W_0=0,mu=0.07,sigma=0.2){
   y <- rep(NA,k+1)
+  ym <- rep(NA,k+1)
   y[1]<-y0
+  ym[1] <- y0 #Til at lave antithetic
   dummy_t = t0
   for (i in 1:k){
    ny_t = delta_t + dummy_t
    delta_W = rnorm(1)*sqrt(delta_t)
    y[i+1]<-y[i]+mu*y[i]*delta_t+sigma*y[i]*delta_W
+   ym[i+1] <- ym[i]+mu*ym[i]*delta_t-sigma*ym[i]*delta_W #antithetic
   }
-  return(y)
+  A <- cbind(y,ym)
+  return(A)
 }
 
 #Function til at lave dataframe til at plotte trajectories
@@ -21,7 +25,7 @@ plt<-function(number=10,k= 100,t0=0,y0=10,delta_t,W_0=0,mu=0.07,sigma=0.2){
   delta_t0 = 1/1000
   H <- matrix(data = NA, nrow = k+1, ncol = number)
   for (i in 1:10){
-    H[,i]<-Euler(delta_t = delta_t0, k=k)
+    H[,i]<-Euler(delta_t = delta_t0, k=k)[,1]
     delta_t0<-  delta_t0 + 0.01
   }
   H1 <- as.data.frame(cbind(H,seq(0,100))) #Dataframe, så det kan bruges i ggplot
@@ -52,30 +56,82 @@ graph<-function(dataframe){
 graph(plt())
 
 
-#SIMULERING AF MEAN
+
+
+
+
+####################  SIMULERING AF GÆT AF MEAN
+#Monte carlo
 E_S_t <- function(n,t0,y0,delta_t,W_0=0,k,mu,sigma){
   z <- rep(NA,n) #Holder Euler-værdierne
   for (i in 1:n){
-    z[i]<-Euler(1/1000,1000)[k+1]
+    z[i]<-Euler(delta_t,k)[k+1,1]
   }
   a<- mean(z)
   return(a)
 }
 
-monte<-E_S_t(10000,0,10,1/1000,0,1000,0.07,0.2)
-#T=10001
-mu_log <- (0.07-0.5*0.2^2)+log(10) 
-exp(mu_log+(0.2^2)/2) #Den teoretiske værdi
-error<- monte-exp(mu_log+(1001/1000)*(0.2^2)/2) #Error
-
-zy<-rep(NA,100000)
-for (i in 1:100000){
-  zy[i]<-rlnorm(1,mu_log,sqrt(0.2^2*0.5*(1001/1000)))
+#ANTITHETIC
+Ant <- function(n,t0,y0,delta_t,W_0=0,k,mu,sigma){
+  z <- matrix(data=NA, ncol=2, nrow=n) 
+  for (i in 1:n){
+    z[i,]<-Euler(delta_t,k)[k+1,]
+  }
+  a <- 1/(2*n)*sum(z)
+  return(a)
 }
-mean(zy)
 
 
 
+#Den teoretiske værdi (Forventet værdi af en lognormal)
+Teo_v<- function(t){ #t angiver store T
+  mu_log <- (0.07-0.5*0.2^2)*t+log(10)
+  r <- exp(mu_log+(t*0.2^2)/2) 
+  return(r)
+}
+
+
+#Error for de to metoder
+monte<-E_S_t(10000,0,10,1/500,0,1000,0.07,0.2)
+anti<-Ant(5000,0,10,1/500,0,1000,0.07,0.2)
+
+error_m<- monte-Teo_v(2) 
+error_a<- anti-Teo_v(2)
+error_m
+error_a
+#Bemærk at n er forskelligt i de to metoder
+
+#Loop for at skabe flere error
+j<-rep(NA,10)
+for (i in 1:10){
+  monte<-E_S_t(10000,0,10,1/500,0,1000,0.07,0.2)
+  anti<-Ant(5000,0,10,1/500,0,1000,0.07,0.2)
+  error_m<- abs(monte-Teo_v(2)) 
+  error_a<- abs(anti-Teo_v(2))
+  j[i]<- error_m - error_a
+}
+#Positiv er m størst, negativ er a størst
+mean(j) #Gns af error
+j #Burde være positiv
+
+
+#Tjek varians/sd ################### VED DET IKKE HELT OM DET BARE SKAL SLETTES
+L<-2000
+sv<-rep(NA,L)
+
+for (i in 1:L){
+  mon<-E_S_t(10000,0,10,1/300,0,300,0.07,0.2)
+  sv[i]<-mon-Teo_v(1)
+  print(i)
+}
+
+mean(sv)
+sd(sv)
+1/sqrt(10000)
+
+
+
+########################### OPG H. BURDE NOK FLYTTES TIL ET ANDET DOKU
 #Opg h)
 J<-1000000
 L<- 5000
@@ -98,7 +154,7 @@ mean(sigmahat*500)
 var(sigmahat*500)
 cor(muhat,sigmahat*500)
 
-
+hist(sigmahat, breaks=40)
 
 
 0.04/(L*1/(500)) + 0.04^2/(2*L)
