@@ -1,14 +1,19 @@
 library(ggplot2)
 library(tidyr)
 library(dplyr)
+library(gridExtra)
+library(greekLetters)
 
 #Simulering af S
 Euler<-function(delta_t,k,t0=0,y0=10,W_0=0,mu=0.07,sigma=0.2){
+  #parameter
   y <- rep(NA,k+1)
   ym <- rep(NA,k+1)
   y[1]<-y0
   ym[1] <- y0 #Til at lave antithetic
   dummy_t = t0
+  
+  #udregning
   for (i in 1:k){
    ny_t = delta_t + dummy_t
    delta_W = rnorm(1)*sqrt(delta_t)
@@ -19,11 +24,59 @@ Euler<-function(delta_t,k,t0=0,y0=10,W_0=0,mu=0.07,sigma=0.2){
   return(A)
 }
 
-#Function til at lave dataframe til at plotte trajectories
+#Fkt til at plt 4 forskellige delta_t i samme tidsperiode
+plt_delta<-function(d1, d2, d3, d4, k= 100,t0=0,y0=10,delta_t,W_0=0,mu=0.07,sigma=0.2){
+  #udregning
+  A<-Euler(d1,1/d1)[,1]
+  xa<-seq(0,1,d1)
+  B<- Euler(d2,1/d2)[,1]
+  xb<-seq(0,1,d2)
+  C <- Euler(d3,1/d3)[,1]
+  xc<-seq(0,1,d3)
+  D <- Euler(d4,1/d4)[,1]
+  xd<-seq(0,1,d4)
+  dfa <- data.frame(xa,A)
+  dfb <- data.frame(xb,B)
+  dfc <- data.frame(xc,C)
+  dfd <- data.frame(xd,D)
+  
+  #plot
+  Aplt<-ggplot(dfa,aes(xa,A)) + geom_line(size=0.01) +
+    ggtitle(paste(greeks('Delta'),'=',d1, ',','grid points','=',1/d1+1)) + 
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5, size=15)) +
+    xlab('Tid') +
+    ylab('')
+  Bplt<-ggplot(dfb,aes(xb,B)) + geom_line(size=0.5) + 
+    ggtitle(paste(greeks('Delta'),'=',d2, ',','grid points','=',1/d2+1)) + 
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5, size=15)) + 
+    xlab('Tid') +
+    ylab('')
+  Cplt<-ggplot(dfc,aes(xc,C)) + geom_line(size=0.01) + 
+    ggtitle(paste(greeks('Delta'),'=',d3, ',','grid points','=',1/d3+1)) + 
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5, size=15)) +
+    xlab('Tid') +
+    ylab('')
+  Dplt<-ggplot(dfd,aes(xd,D)) + geom_line(size=0.01) + 
+    ggtitle(paste(greeks('Delta'),'=',d4, ',','grid points','=',1/d4+1)) + 
+    theme_minimal() +
+    theme(plot.title = element_text(hjust = 0.5, size=15)) +
+    xlab('Tid') +
+    ylab('')
+  grid.arrange(Aplt,Bplt,Cplt,Dplt)
+}
+plt_delta(1/10,1/100,1/1000,1/5000)
+
+
+#Hjlæpefunction til at lave dataframe til at plotte trajectories
 plt<-function(number=10,k= 100,t0=0,y0=10,delta_t,W_0=0,mu=0.07,sigma=0.2){
-  #Udregning
+  #parameter
   delta_t0 = 1/1000
   H <- matrix(data = NA, nrow = k+1, ncol = number)
+  
+  #udregning
   for (i in 1:10){
     H[,i]<-Euler(delta_t = delta_t0, k=k)[,1]
     delta_t0<-  delta_t0 + 0.01
@@ -32,7 +85,7 @@ plt<-function(number=10,k= 100,t0=0,y0=10,delta_t,W_0=0,mu=0.07,sigma=0.2){
   return(H1)
 }
 
-
+#Plot 10 trajectories
 graph<-function(dataframe){
   df1 <- dataframe
   colnames(df1)<-c('t0', 't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 'x')
