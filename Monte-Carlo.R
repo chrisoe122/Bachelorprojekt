@@ -67,7 +67,7 @@ plt_delta<-function(d1, d2, d3, d4, k= 100,t0=0,y0=10,delta_t,W_0=0,mu=0.07,sigm
     ylab('')
   grid.arrange(Aplt,Bplt,Cplt,Dplt)
 }
-plt_delta(1/10,1/100,1/1000,1/5000)
+#plt_delta(1/10,1/100,1/1000,1/5000)
 
 
 #Hjlæpefunction til at lave dataframe til at plotte trajectories
@@ -106,10 +106,6 @@ graph<-function(dataframe){
     scale_x_continuous(expand = c(0.01, 0)) #Så plot starter og slutter ved fct (næsten)
 }
 
-graph(plt())
-
-
-
 
 
 
@@ -124,6 +120,7 @@ E_S_t <- function(n,t0,y0,delta_t,W_0=0,k,mu,sigma){
   return(a)
 }
 
+
 #ANTITHETIC
 Ant <- function(n,t0,y0,delta_t,W_0=0,k,mu,sigma){
   z <- matrix(data=NA, ncol=2, nrow=n) 
@@ -134,6 +131,66 @@ Ant <- function(n,t0,y0,delta_t,W_0=0,k,mu,sigma){
   return(a)
 }
 
+#Call-option_monte
+Call_monte <- function(n,delta_t,k, K, mu, y0=10, sigma=0.2){
+  z <- rep(NA,n) #Holder Euler-værdierne
+  for (i in 1:n){
+    z[i]<-Euler(delta_t,k, mu=mu, y0=y0, sigma=sigma)[k+1,1]
+    j[i] <- max(z[i]-K,0)
+  }
+  a<- mean(j)
+  return(a)
+}
+
+#Call-option
+Call_ant <- function(n,delta_t,k, K, mu, y0=10,sigma=0.2){
+  z <- matrix(data=NA, ncol=2, nrow=n)
+  j <- matrix(data=NA, ncol=2, nrow=n)
+  for (i in 1:n){
+    z[i,]<-Euler(delta_t,k,mu=mu, y0=y0, sigma=sigma)[k+1,]
+    for (l in 1:2){
+      j[i,l]=max(z[i,l]-K,0)
+    }
+    print(i)
+  }
+  a<- 1/(2*n)*sum(j)
+  return(a)
+}
+
+#
+option_monte <- function(n,delta_t,k, K, mu, y0=10, sigma=0.2,c=T){
+  z <- rep(NA,n) #Holder Euler-værdierne
+  j <- rep(NA,n)
+  for (i in 1:n){
+    z[i]<-Euler(delta_t,k, mu=mu, y0=y0, sigma=sigma)[k+1,1]
+    if(c==T){
+      j[i] <- max(z[i]-K,0)
+    }
+    else{
+      j[i] <- max(K-z[i],0)
+    }
+  }
+  a<- mean(j)
+  return(a)
+}
+
+option_ant <- function(n,delta_t,k, K, mu, y0=10,sigma=0.2, c=T){
+  z <- matrix(data=NA, ncol=2, nrow=n)
+  j <- matrix(data=NA, ncol=2, nrow=n)
+  for (i in 1:n){
+    z[i,]<-Euler(delta_t,k,mu=mu, y0=y0, sigma=sigma)[k+1,]
+    if (c==T){
+      for (l in 1:2){
+        j[i,l]=max(z[i,l]-K,0)
+      }}
+    else{
+      for (l in 1:2){
+        j[i,l]=max(K-z[i,l],0)
+    }}
+  }
+  a<- 1/(2*n)*sum(j)
+  return(a)
+}
 
 
 #Den teoretiske værdi (Forventet værdi af en lognormal)
@@ -144,79 +201,3 @@ Teo_v<- function(t){ #t angiver store T
 }
 
 
-#Error for de to metoder
-monte<-E_S_t(10000,0,10,1/500,0,1000,0.07,0.2)
-anti<-Ant(5000,0,10,1/500,0,1000,0.07,0.2)
-
-error_m<- monte-Teo_v(2) 
-error_a<- anti-Teo_v(2)
-error_m
-error_a
-#Bemærk at n er forskelligt i de to metoder
-
-#Loop for at skabe flere error
-j<-rep(NA,10)
-for (i in 1:10){
-  monte<-E_S_t(10000,0,10,1/500,0,1000,0.07,0.2)
-  anti<-Ant(5000,0,10,1/500,0,1000,0.07,0.2)
-  error_m<- abs(monte-Teo_v(2)) 
-  error_a<- abs(anti-Teo_v(2))
-  j[i]<- error_m - error_a
-}
-#Positiv er m størst, negativ er a størst
-mean(j) #Gns af error
-j #Burde være positiv
-
-
-#Tjek varians/sd ################### VED DET IKKE HELT OM DET BARE SKAL SLETTES
-L<-2000
-sv<-rep(NA,L)
-
-for (i in 1:L){
-  mon<-E_S_t(10000,0,10,1/300,0,300,0.07,0.2)
-  sv[i]<-mon-Teo_v(1)
-  print(i)
-}
-
-mean(sv)
-sd(sv)
-1/sqrt(10000)
-
-
-
-########################### OPG H. BURDE NOK FLYTTES TIL ET ANDET DOKU
-#Opg h)
-J<-1000000
-L<- 5000
-muhat<-rep(NA,J)
-muhatlog<-rep(NA,J)
-sigmahat<-rep(NA,J)
-for (i in 1:J){
-  a<-Euler(1/500,L, y0=10)
-  logp<-(log(a)-log(lag(a)))[2:L+1]
-  muhat[i]<-(mean(logp))*500+0.5*var(logp)*500
-  muhatlog[i]<-mean(logp)
-  sigmahat[i]<- var(logp)
-  print(i)
-}
-mean(muhat)
-var(muhatlog)
-var(muhat)
-median(muhat)
-mean(sigmahat*500)
-var(sigmahat*500)
-cor(muhat,sigmahat*500)
-
-hist(sigmahat, breaks=40)
-
-
-0.04/(L*1/(500)) + 0.04^2/(2*L)
-var(muhat)
-sd(muhat)
-
-0.04^2*2/L
-var(sigmahat*500)
-
-
-0.04^2/(L)
-cov(sigmahat*500,muhat)
