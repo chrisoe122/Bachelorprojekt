@@ -44,7 +44,7 @@ sigma<-(-n+sqrt(2*n*m+n^2))/n
 
 
 #tal fra 2020
-logp2020<-logp[15102:15354]
+logp2020<-logp[15104:15355]
 mean(logp2020)
 var(logp2020)
 #varians og mean er meget st?rre. Variansen skyldes usikkerheden skabt af corona og mean stigning
