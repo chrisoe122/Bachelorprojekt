@@ -1,146 +1,173 @@
 source("Monte-Carlo.R")
-library(grid)
+library(grid) #Har fkt 'textGrob' så title på plot kan forstørres
 
-#Teoretisk værdi
-d1<-function(S,K,r,delta,tau,sigma){
+###Teoretisk værdi ####
+d1<-function(S,K,r,tau,sigma){
   a<- log(S/K)+(r+(sigma^2)*0.5)*tau
   return(a/(sigma*sqrt(tau)))
 }
 
-d2<-function(S,K,r,delta,tau,sigma){
-  return(d1(S,K,r,delta,tau,sigma)-sigma*sqrt(tau))
+d2<-function(S,K,r,tau,sigma){
+  return(d1(S,K,r,tau,sigma)-sigma*sqrt(tau))
 }
 
-V_c<-function(S,K,r,delta,tau,sigma){
-  return(S*pnorm(d1(S,K,r,delta,tau,sigma),0,1)-K*exp(-r*tau)*pnorm(d2(S,K,r,delta,tau,sigma),0,1)) 
+V_c<-function(S,K,r,tau,sigma){
+  return(S*pnorm(d1(S,K,r,tau,sigma),0,1)-K*exp(-r*tau)*pnorm(d2(S,K,r,tau,sigma),0,1)) 
 }
 
-V_p<- function(S,K,r,delta,tau,sigma){
-  return(K*exp(-r*tau)+V_c(S,K,r,delta,tau,sigma)-S)
+V_p<- function(S,K,r,tau,sigma){
+  return(K*exp(-r*tau)+V_c(S,K,r,tau,sigma)-S)
 }
 
 
 
-#Simulering
 
 
-#GØR DET MED FORSKELLIGE VÆRDIER AF ST, T, r n, OG sigma
+####Simulering ######
 
-sigma_plot<-function(start,slut,interval, simul=1000,c=T){
+#Sigma
+sigma_data<-function(start,slut,interval, simul=1000,c=T){
+  
+  #parameter
   x<-seq(start,slut,interval)
   A<-rep(NA,length(x))
   B<-rep(NA,length(x))
   C <- rep(NA,length(x))
-  if(c==T){
+  D<-rep(NA,length(x))
+  
+  #Udregning
+  if(c==T){ #Call option
     for (i in 1:length(x)){
-      A[i]<- exp(-0.03)*option_ant(simul/2,1/500,500,12,0.03, y0=10,sigma=x[i])
-      B[i]<- exp(-0.03)*option_monte(simul,1/500,500,12,0.03, y0=10, sigma=x[i])
-      C[i]<- V_c(10,12,0.03,0,1,sigma=x[i])
+      A[i]<- exp(-0.03)*option_ant(n=simul/2, delta_t=1/500, k=500, K=12, mu=0.03, y0=10, sigma=x[i])
+      B[i]<- exp(-0.03)*option_monte(n=simul, delta_t=1/500, k=500, K=12, mu=0.03, y0=10, sigma=x[i])
+      C[i]<- option_cv(n=simul, delta_t=1/500, k=500, K=12, 
+                       K2=9, mu=0.03, y0=10, sigma=x[i], r=0.03)
+      D[i]<- V_c(S=10, K=12, r=0.03, tau=1, sigma=x[i])
     }}
-  else{
+  else{ #Put option
     for (i in 1:length(x)){
-      A[i]<- exp(-0.03)*option_ant(simul/2,1/500,500,12,0.03, y0=10,sigma=x[i],c=F)
-      B[i]<- exp(-0.03)*option_monte(simul,1/500,500,12,0.03, y0=10, sigma=x[i],c=F)
-      C[i]<- V_p(10,12,0.03,0,1,sigma=x[i])
+      A[i]<- exp(-0.03)*option_ant(n=simul/2, delta_t=1/500, k=500, K=12, mu=0.03, y0=10, sigma=x[i], c=F)
+      B[i]<- exp(-0.03)*option_monte(n=simul, delta_t=1/500, k=500, K=12, mu=0.03, y0=10, sigma=x[i],c=F)
+      C[i]<- option_cv(n=simul, delta_t=1/500, k=500, K=12, 
+                       K2=9, mu=0.03, y0=10, sigma=x[i], c=F, r=0.03)
+      D[i]<- V_p(S=10, K=12, r=0.03, tau=1, sigma=x[i])
     }
   }
-  D<-data.frame(x,A,B,C)
-  return(D)
+  E<-data.frame(x,A,B,C,D)
+  return(E)
 }
 
-S_plot<-function(start,slut,interval, simul=1000,c=T){
+#S
+S_data<-function(start,slut,interval, simul=1000,c=T){
+  
+  #parameter
   x<-seq(start,slut,interval)
-  A<-rep(NA,length(x))
-  B<-rep(NA,length(x))
-  C <- rep(NA,length(x))
+  A<-rep(NA,length(x)) #ant
+  B<-rep(NA,length(x)) #monte
+  C<-rep(NA,length(x)) #control
+  D<-rep(NA,length(x)) #bs
+  
+  #Udregning
   if(c==T){
     for (i in 1:length(x)){
-      A[i]<- exp(-0.03)*option_ant(simul/2,1/500,500,12,0.03, y0=x[i])
-      B[i]<- exp(-0.03)*option_monte(simul,1/500,500,12,0.03, y0=x[i])
-      C[i]<- V_c(S=x[i],12,0.03,0,1,sigma=0.2)
+      A[i]<- exp(-0.03)*option_ant(n=simul/2, delta_t=1/500, k=500, K=12, mu=0.03, y0=x[i], sigma=0.2)
+      B[i]<- exp(-0.03)*option_monte(n=simul, delta_t=1/500, k=500, K=12, mu=0.03, y0=x[i], sigma=0.2)
+      C[i]<- option_cv(n=simul, delta_t=1/500, k=500, K=12, 
+                       K2=9, mu=0.03, y0=x[i], sigma=0.2, r=0.03)
+      D[i]<- V_c(S=x[i], K=12, r=0.03, tau=1, sigma=0.2)
     }}
   else{
     for (i in 1:length(x)){
-      A[i]<- exp(-0.03)*option_ant(simul/2,1/500,500,12,0.03, y0=x[i],c=F)
-      B[i]<- exp(-0.03)*option_monte(simul,1/500,500,12,0.03, y0=x[i],c=F)
-      C[i]<- V_p(S=x[i],12,0.03,0,1,sigma=0.2)
+      A[i]<- exp(-0.03)*option_ant(n=simul/2, delta_t=1/500, k=500, K=12, mu=0.03, y0=x[i], sigma=0.2, c=F)
+      B[i]<- exp(-0.03)*option_monte(n=simul, delta_t=1/500, k=500, K=12, mu=0.03, y0=x[i], sigma=0.2, c=F)
+      C[i]<- option_cv(n=simul, delta_t=1/500, k=500, K=12, 
+                 K2=9, mu=0.03, y0=x[i], sigma=0.2, c=F, r=0.03)
+      D[i]<- V_p(S=x[i], K=12, r=0.03, tau=1, sigma=0.2)
   }}
-  D<-data.frame(x,A,B,C)
-  return(D)
+  E<-data.frame(x,A,B,C,D)
+  return(E)
 }
 
-T_plot<-function(start,slut,interval, simul=1000,c=T){
+#Tid
+T_data<-function(start,slut,interval, simul=1000,c=T){
+  
+  #parameter
   x<-seq(start,slut,interval)
-  A<-rep(NA,length(x))
-  B<-rep(NA,length(x))
-  C <- rep(NA,length(x))
+  A<-rep(NA,length(x)) #ant
+  B<-rep(NA,length(x)) #monte
+  C<-rep(NA,length(x)) #control
+  D<-rep(NA,length(x)) #bs
+  
+  #Udregning
   if(c==T){
     for (i in 1:length(x)){
-      A[i]<- exp(-0.03*x[i])*option_ant(simul/2,1/500,as.integer(500*x[i]),12,0.03, y0=10)
-      B[i]<- exp(-0.03*x[i])*option_monte(simul,1/500,as.integer(500*x[i]),12,0.03, y0=10)
-      C[i]<- V_c(10,12,0.03,0,tau=x[i], sigma=0.2)
+      A[i]<- exp(-0.03*x[i])*option_ant(n=simul/2, delta_t=1/500, k=as.integer(500*x[i]), K=12, mu=0.03, y0=10, sigma=0.2)
+      B[i]<- exp(-0.03*x[i])*option_monte(n=simul, delta_t=1/500, k=as.integer(500*x[i]), K=12, mu=0.03, y0=10, sigma=0.2)
+      C[i]<- option_cv(n=simul, delta_t=1/500, k=as.integer(500*x[i]), K=12, 
+                       K2=9, mu=0.03, y0=10, sigma=0.2, r=0.03)
+      D[i]<- V_c(S=10, K=12, r=0.03, tau=x[i], sigma=0.2)
     }}
   else{
     for (i in 1:length(x)){
-      A[i]<- exp(-0.03*x[i])*option_ant(simul/2,1/500,as.integer(500*x[i]),12,0.03, y0=10,c=F)
-      B[i]<- exp(-0.03*x[i])*option_monte(simul,1/500,as.integer(500*x[i]),12,0.03, y0=10,c=F)
-      C[i]<- V_p(10,12,0.03,0,tau=x[i], sigma=0.2)
+      A[i]<- exp(-0.03*x[i])*option_ant(n=simul/2, delta_t=1/500, k=as.integer(500*x[i]), K=12, mu=0.03, y0=10, sigma=0.2,c=F)
+      B[i]<- exp(-0.03*x[i])*option_monte(n=simul, delta_t=1/500, k=as.integer(500*x[i]), K=12, mu=0.03, y0=10, sigma=0.2,c=F)
+      C[i]<- option_cv(n=simul, delta_t=1/500, k=as.integer(500*x[i]), K=12, 
+                       K2=9, mu=0.03, y0=10, sigma=0.2, c=F, r=0.03)
+      D[i]<- V_p(S=10, K=12, r=0.03, tau=x[i], sigma=0.2)
   }}
-  D<-data.frame(x,A,B,C)
-  return(D)
+  E<-data.frame(x,A,B,C,D)
+  return(E)
 }
 
-
-r_plot<-function(start,slut,interval, simul=1000,c=T){
+#Rente
+r_data<-function(start,slut,interval, simul=1000,c=T){
+  
+  #parameter
   x<-seq(start,slut,interval)
-  A<-rep(NA,length(x))
-  B<-rep(NA,length(x))
-  C <- rep(NA,length(x))
+  A<-rep(NA,length(x)) #ant
+  B<-rep(NA,length(x)) #monte
+  C<-rep(NA,length(x)) #control
+  D<-rep(NA,length(x)) #bs
+  
+  #udregning
   if(c==T){
     for (i in 1:length(x)){
-      A[i]<- exp(-x[i])*option_ant(simul/2,1/500,500,12,mu=x[i], y0=10)
-      B[i]<- exp(-x[i])*option_monte(simul,1/500,500,12,mu=x[i], y0=10)
-      C[i]<- V_c(10,12,x[i],0,1,sigma=0.2)
+      A[i]<- exp(-x[i])*option_ant(n=simul/2, delta_t=1/500, k=500, K=12, mu=x[i], y0=10, sigma=0.2)
+      B[i]<- exp(-x[i])*option_monte(n=simul, delta_t=1/500, k=500, K=12, mu=x[i], y0=10, sigma=0.2)
+      C[i]<- option_cv(n=simul, delta_t=1/500, k=500, K=12, 
+                       K2=9, mu=x[i], y0=10, sigma=0.2, r=x[i])
+      D[i]<- V_c(S=10, K=12, r=x[i], tau=1, sigma=0.2)
     }}
   else{
     for (i in 1:length(x)){
-      A[i]<- exp(-x[i])*option_ant(simul/2,1/500,500,12,mu=x[i], y0=10,c=F)
-      B[i]<- exp(-x[i])*option_monte(simul,1/500,500,12,mu=x[i], y0=10,c=F)
-      C[i]<- V_p(10,12,x[i],0,1,sigma=0.2)
+      A[i]<- exp(-x[i])*option_ant(n=simul/2, delta_t=1/500, k=500, K=12, mu=x[i], y0=10, sigma=0.2,c=F)
+      B[i]<- exp(-x[i])*option_monte(n=simul, delta_t=1/500, k=500, K=12, mu=x[i], y0=10, sigma=0.2,c=F)
+      C[i]<- option_cv(n=simul, delta_t=1/500, k=500, K=12, 
+                       K2=9, mu=x[i], y0=10, sigma=0.2, c=F, r=x[i])
+      D[i]<- V_p(S=10, K=12, r=x[i], tau=1, sigma=0.2)
   }}
-  D<-data.frame(x,A,B,C)
-  return(D)
+  E<-data.frame(x,A,B,C,D)
+  return(E)
 }
 
 pris_graf<-function(data,xv,title){
-  colnames(data)<-c('x','Anti','Monte','BS')
+  colnames(data)<-c('x','Anti','Monte', 'Control', 'BS')
   data1 <- data %>%
-    select(x, Anti, Monte, BS) %>%
+    select(x, Anti, Monte, Control, BS) %>%
     gather(key = "variable", value = "value", -x) #Laver det til en enkel column, som ggplot bruger
-  data1$variable <- factor(data1$variable,levels = c('Anti','Monte','BS')) #Så legend står i korrekt rækkefølge
-  ggplot(data1, aes(x = x, y = value, group=variable)) + 
-    geom_line(aes(color = variable), size = 1) +
+  data1$variable <- factor(data1$variable,levels = c('Anti','Monte', 'Control', 'BS')) #Så legend står i korrekt rækkefølge
+  ggplot(data1, aes(x = x, y = value, group=variable, size=variable, colour=variable)) + 
+    geom_line() +
+    scale_size_manual(breaks=c("Anti","Monte","Control","BS"), values=c(0.8,0.8,0.8,1.1), guide=F) + #Forskelligt størrelse, guide=F laver ingen legend
     theme_minimal() +
-    xlab(xv) +
-    ylab('Optionspris') +
-    ggtitle(title) +
-    theme(plot.title = element_text(hjust = 0.5, size=18))+ 
-    theme(legend.key.size = unit(1.5, 'cm')) +
-    theme(axis.title = element_text(size=12)) +
+    xlab(xv) + #x-axis navn
+    ylab('Optionspris') + #y-axis navn
+    ggtitle(title) + #title
+    theme(plot.title = element_text(hjust = 0.5, size=18))+ #Størrelse på title
+    theme(legend.key.size = unit(1.5, 'cm')) + #Ændre legend
+    theme(axis.title = element_text(size=12)) + #Størrelse på axis
+    theme(plot.background = element_blank(), panel.grid.minor = element_blank(), axis.line = element_blank(),
+          legend.key = element_blank(), legend.title = element_blank()) +
     scale_colour_discrete('') + #Ændre navn på legend
     scale_x_continuous(expand = c(0.01, 0)) #Så plot starter og slutter ved fct (næsten)
 }
-#Call plot
-rc<-pris_graf(r_plot(0.01,0.05,0.001,c=T),'r','r')
-Sc<-pris_graf(S_plot(3,8,0.1,c=T),'S(t)','S(t)')
-Sigmac<-pris_graf(sigma_plot(0.1,0.5,0.01),greeks('sigma'),greeks('sigma'))
-Tc<-pris_graf(T_plot(0.5,2,0.025),'T','T')
-grid.arrange(rc,Sc,Sigmac,Tc, top = textGrob('Call option',gp=gpar(fontsize=28,font=1)))
-
-#Put plot
-rp<-pris_graf(r_plot(0.01,0.05,0.001,c=F),'r','r')
-Sp<-pris_graf(S_plot(3,8,0.1,c=F),'S(t)','S(t)')
-Sigmap<-pris_graf(sigma_plot(0.1,0.5,0.01,c=F),greeks('sigma'),greeks('sigma'))
-Tp<-pris_graf(T_plot(0.5,2,0.025,c=F),'T','T')
-grid.arrange(rp,Sp,Sigmap,Tp, top = textGrob('Put option',gp=gpar(fontsize=28,font=1)))
-

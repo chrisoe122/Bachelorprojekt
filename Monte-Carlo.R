@@ -1,39 +1,60 @@
-library(ggplot2)
-library(tidyr)
-library(dplyr)
-library(gridExtra)
-library(greekLetters)
+library(ggplot2) #ggplot
+library(tidyr) #Har 'gather', så man kan ordne data (Bruges i ggplot)
+library(dplyr) #Har 'select', bruges også til at ordne data (Bruges i ggpplot)
+library(gridExtra) #Har fkt 'grid.arrange'
+
 
 #Simulering af S
-Euler<-function(delta_t,k,t0=0,y0=10,W_0=0,mu=0.07,sigma=0.2){
+Euler<-function(delta_t,k,y0=10,mu=0.07,sigma=0.2, ant=F, mu2=0.05, sigma2=0.2, cv=F){
   #parameter
   y <- rep(NA,k+1)
   ym <- rep(NA,k+1)
+  ycv <- rep(NA,k+1)
   y[1]<-y0
   ym[1] <- y0 #Til at lave antithetic
-  dummy_t = t0
+  ycv[1] <- y0
   
   #udregning
-  for (i in 1:k){
-   ny_t = delta_t + dummy_t
-   delta_W = rnorm(1)*sqrt(delta_t)
-   y[i+1]<-y[i]+mu*y[i]*delta_t+sigma*y[i]*delta_W
-   ym[i+1] <- ym[i]+mu*ym[i]*delta_t-sigma*ym[i]*delta_W #antithetic
+  if(ant==T && cv==F){ #Antithetic
+    for (i in 1:k){
+     delta_W = rnorm(1)*sqrt(delta_t)
+     y[i+1]<-y[i]+mu*y[i]*delta_t+sigma*y[i]*delta_W
+     ym[i+1] <- ym[i]+mu*ym[i]*delta_t-sigma*ym[i]*delta_W #Modsat variable
+     }
+    A <- cbind(y,ym)
+    }
+  if(ant==F && cv==T){ #Control
+    for (i in 1:k){
+      delta_W = rnorm(1)*sqrt(delta_t)
+      y[i+1]<-y[i]+mu*y[i]*delta_t+sigma*y[i]*delta_W
+      ycv[i+1]<-ycv[i]+mu2*ycv[i]*delta_t+sigma2*ycv[i]*delta_W #Control variable
+    }
+    A <- cbind(y,ycv)
   }
-  A <- cbind(y,ym)
+  if(ant==F && cv==F){ #Hvorfor kan jeg ikke bruge else?
+    for (i in 1:k){
+      delta_W = rnorm(1)*sqrt(delta_t)
+      y[i+1]<-y[i]+mu*y[i]*delta_t+sigma*y[i]*delta_W
+    }
+    A <- y
+  }
   return(A)
 }
 
+
+
+###GRAFER ######
+
 #Fkt til at plt 4 forskellige delta_t i samme tidsperiode
-plt_delta<-function(d1, d2, d3, d4, k= 100,t0=0,y0=10,delta_t,W_0=0,mu=0.07,sigma=0.2){
+plt_delta<-function(d1, d2, d3, d4, k= 100,y0=10,delta_t,mu=0.07,sigma=0.2){
   #udregning
-  A<-Euler(d1,1/d1)[,1]
+  A<-Euler(d1,1/d1)
   xa<-seq(0,1,d1)
-  B<- Euler(d2,1/d2)[,1]
+  B<- Euler(d2,1/d2)
   xb<-seq(0,1,d2)
-  C <- Euler(d3,1/d3)[,1]
+  C <- Euler(d3,1/d3)
   xc<-seq(0,1,d3)
-  D <- Euler(d4,1/d4)[,1]
+  D <- Euler(d4,1/d4)
   xd<-seq(0,1,d4)
   dfa <- data.frame(xa,A)
   dfb <- data.frame(xb,B)
@@ -42,48 +63,49 @@ plt_delta<-function(d1, d2, d3, d4, k= 100,t0=0,y0=10,delta_t,W_0=0,mu=0.07,sigm
   
   #plot
   Aplt<-ggplot(dfa,aes(xa,A)) + geom_line(size=0.01) +
-    ggtitle(paste(greeks('Delta'),'=',d1, ',','grid points','=',1/d1+1)) + 
+    ggtitle(bquote(paste(Delta,'=', .(d1), ',','grid points','=', .(1/d1+1)))) + 
     theme_minimal() +
     theme(plot.title = element_text(hjust = 0.5, size=15)) +
     xlab('Tid') +
     ylab('')
   Bplt<-ggplot(dfb,aes(xb,B)) + geom_line(size=0.5) + 
-    ggtitle(paste(greeks('Delta'),'=',d2, ',','grid points','=',1/d2+1)) + 
+    ggtitle(bquote(paste(Delta,'=', .(d1), ',','grid points','=', .(1/d2+1)))) + 
     theme_minimal() +
     theme(plot.title = element_text(hjust = 0.5, size=15)) + 
     xlab('Tid') +
     ylab('')
   Cplt<-ggplot(dfc,aes(xc,C)) + geom_line(size=0.01) + 
-    ggtitle(paste(greeks('Delta'),'=',d3, ',','grid points','=',1/d3+1)) + 
+    ggtitle(bquote(paste(Delta,'=', .(d1), ',','grid points','=', .(1/d3+1)))) + 
     theme_minimal() +
     theme(plot.title = element_text(hjust = 0.5, size=15)) +
     xlab('Tid') +
     ylab('')
   Dplt<-ggplot(dfd,aes(xd,D)) + geom_line(size=0.01) + 
-    ggtitle(paste(greeks('Delta'),'=',d4, ',','grid points','=',1/d4+1)) + 
+    ggtitle(bquote(paste(Delta,'=', .(d1), ',','grid points','=', .(1/d4+1)))) + 
     theme_minimal() +
     theme(plot.title = element_text(hjust = 0.5, size=15)) +
     xlab('Tid') +
     ylab('')
   grid.arrange(Aplt,Bplt,Cplt,Dplt)
 }
-#plt_delta(1/10,1/100,1/1000,1/5000)
 
 
 #Hjlæpefunction til at lave dataframe til at plotte trajectories
-plt<-function(number=10,k= 100,t0=0,y0=10,delta_t,W_0=0,mu=0.07,sigma=0.2){
+plt<-function(number=10,k= 100,y0=10,mu=0.07,sigma=0.2){
+  
   #parameter
-  delta_t0 = 1/1000
+  delta_t0 = 1/1000 #startværdi
   H <- matrix(data = NA, nrow = k+1, ncol = number)
   
   #udregning
   for (i in 1:10){
-    H[,i]<-Euler(delta_t = delta_t0, k=k)[,1]
+    H[,i]<-Euler(delta_t = delta_t0, k=k)
     delta_t0<-  delta_t0 + 0.01
   }
-  H1 <- as.data.frame(cbind(H,seq(0,100))) #Dataframe, så det kan bruges i ggplot
+  H1 <- as.data.frame(cbind(H,seq(0,k))) #Dataframe, så det kan bruges i ggplot
   return(H1)
 }
+
 
 #Plot 10 trajectories
 graph<-function(dataframe){
@@ -98,7 +120,7 @@ graph<-function(dataframe){
     theme_minimal() +
     xlab('Simulations') +
     ylab('') +
-    ggtitle('Trajectories with increasing $delta_t$') +
+    ggtitle(bquote(paste('Trajectories with increasing ', Delta))) +
     theme(plot.title = element_text(hjust = 0.5, size=20))+ 
     theme(legend.key.size = unit(1.5, 'cm')) +
     theme(axis.title = element_text(size=12)) +
@@ -106,15 +128,20 @@ graph<-function(dataframe){
     scale_x_continuous(expand = c(0.01, 0)) #Så plot starter og slutter ved fct (næsten)
 }
 
+####################  SIMULERING AF S_T ###########
 
+#Den teoretiske værdi (Forventet værdi af en lognormal)
+Teo_v<- function(t,mu=0.07,sigma=0.2, y0=10){ #t angiver store T
+  mu_log <- (mu-0.5*sigma^2)*t+log(y0)
+  a <- exp(mu_log+(t*sigma^2)/2) 
+  return(a)
+}
 
-
-####################  SIMULERING AF GÆT AF MEAN
 #Monte carlo
-E_S_t <- function(n,t0,y0,delta_t,W_0=0,k,mu,sigma){
+E_S_t <- function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2){
   z <- rep(NA,n) #Holder Euler-værdierne
   for (i in 1:n){
-    z[i]<-Euler(delta_t,k)[k+1,1]
+    z[i]<-Euler(y0=y0, delta_t=delta_t, k=k, mu=mu, sigma=sigma)[k+1]
   }
   a<- mean(z)
   return(a)
@@ -122,47 +149,36 @@ E_S_t <- function(n,t0,y0,delta_t,W_0=0,k,mu,sigma){
 
 
 #ANTITHETIC
-Ant <- function(n,t0,y0,delta_t,W_0=0,k,mu,sigma){
+Ant <- function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2){
   z <- matrix(data=NA, ncol=2, nrow=n) 
   for (i in 1:n){
-    z[i,]<-Euler(delta_t,k)[k+1,]
+    z[i,]<-Euler(y0=y0, delta_t=delta_t, k=k, mu=mu, sigma=sigma, ant=T)[k+1,]
   }
   a <- 1/(2*n)*sum(z)
   return(a)
 }
 
-#Call-option_monte
-Call_monte <- function(n,delta_t,k, K, mu, y0=10, sigma=0.2){
-  z <- rep(NA,n) #Holder Euler-værdierne
+
+#Control
+cv<-function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2,mu2=0.05,sigma2=0.2){
+  z <- rep(NA,n) 
   for (i in 1:n){
-    z[i]<-Euler(delta_t,k, mu=mu, y0=y0, sigma=sigma)[k+1,1]
-    j[i] <- max(z[i]-K,0)
+    b<-Euler(y0=y0,delta_t,k,mu=mu,sigma=sigma,mu2=mu2,sigma2=sigma2, cv=T)[k+1,]
+    z[i]<-b[1]+Teo_v(delta_t*k,mu=mu2, sigma=sigma2)-b[2]
   }
-  a<- mean(j)
+  a <- 1/(n)*sum(z)
   return(a)
 }
 
-#Call-option
-Call_ant <- function(n,delta_t,k, K, mu, y0=10,sigma=0.2){
-  z <- matrix(data=NA, ncol=2, nrow=n)
-  j <- matrix(data=NA, ncol=2, nrow=n)
-  for (i in 1:n){
-    z[i,]<-Euler(delta_t,k,mu=mu, y0=y0, sigma=sigma)[k+1,]
-    for (l in 1:2){
-      j[i,l]=max(z[i,l]-K,0)
-    }
-    print(i)
-  }
-  a<- 1/(2*n)*sum(j)
-  return(a)
-}
 
-#
+
+#########  OPTIONER  ####
+#Monte
 option_monte <- function(n,delta_t,k, K, mu, y0=10, sigma=0.2,c=T){
   z <- rep(NA,n) #Holder Euler-værdierne
   j <- rep(NA,n)
   for (i in 1:n){
-    z[i]<-Euler(delta_t,k, mu=mu, y0=y0, sigma=sigma)[k+1,1]
+    z[i]<-Euler(delta_t,k, mu=mu, y0=y0, sigma=sigma)[k+1]
     if(c==T){
       j[i] <- max(z[i]-K,0)
     }
@@ -174,11 +190,13 @@ option_monte <- function(n,delta_t,k, K, mu, y0=10, sigma=0.2,c=T){
   return(a)
 }
 
+
+#Antithetic
 option_ant <- function(n,delta_t,k, K, mu, y0=10,sigma=0.2, c=T){
   z <- matrix(data=NA, ncol=2, nrow=n)
   j <- matrix(data=NA, ncol=2, nrow=n)
   for (i in 1:n){
-    z[i,]<-Euler(delta_t,k,mu=mu, y0=y0, sigma=sigma)[k+1,]
+    z[i,]<-Euler(delta_t,k,mu=mu, y0=y0, sigma=sigma, ant=T)[k+1,1:2]
     if (c==T){
       for (l in 1:2){
         j[i,l]=max(z[i,l]-K,0)
@@ -193,11 +211,28 @@ option_ant <- function(n,delta_t,k, K, mu, y0=10,sigma=0.2, c=T){
 }
 
 
-#Den teoretiske værdi (Forventet værdi af en lognormal)
-Teo_v<- function(t){ #t angiver store T
-  mu_log <- (0.07-0.5*0.2^2)*t+log(10)
-  r <- exp(mu_log+(t*0.2^2)/2) 
-  return(r)
+#Control
+option_cv <- function(n,delta_t,k, K, K2, mu, y0=10,sigma=0.2, c=T, r=0.03){
+  z <- rep(NA,n) #Euler-værdierne
+  j <- rep(NA,n) #Det vi er interesseret i
+  b <- rep(NA,n) #Kalibrering værdier
+  if(c==T){
+    for (i in 1:n){
+      z[i] <- Euler(delta_t,k,mu=mu, y0=y0, sigma=sigma)[k+1]
+      j[i] <- max(z[i]-K,0)
+      b[i] <- max(z[i]-K2,0)
+    }
+    a<- exp(-r*delta_t*k)*mean(j)+V_c(y0,K2,r,delta_t*k,sigma)-exp(-r*delta_t*k)*mean(b)
+  }
+  else{
+    for (i in 1:n){
+      z[i] <- Euler(delta_t,k,mu=mu, y0=y0, sigma=sigma)[k+1]
+      j[i] <- max(K-z[i],0)
+      b[i] <- max(K2-z[i],0)
+    }
+    a<- exp(-r*delta_t*k)*mean(j)+V_p(y0,K2,r,delta_t*k,sigma)-exp(-r*delta_t*k)*mean(b)
+  }
+  return(a)
 }
 
 
