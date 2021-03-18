@@ -171,3 +171,33 @@ pris_graf<-function(data,xv,title){
     scale_colour_discrete('') + #Ændre navn på legend
     scale_x_continuous(expand = c(0.01, 0)) #Så plot starter og slutter ved fct (næsten)
 }
+
+
+
+###Udregning af abs fejl ved monte, anti og cv i forhold til teoretisk værdi.
+monte_abs_opt<-function(delta_t=1/500, k=500, mu=0.03, sigma=0.2, points, start, step){
+  a<-rep(NA,points)
+  for (i in 1:points){
+    a[i] <- abs(option_monte(n=i*step+start, delta_t=1/500, k=k, K=12, mu=0.03, y0=10, sigma=0.2)-V_c(S=10, K=12, r=0.03, tau=1, sigma=0.2))
+  }
+  return(a)
+}
+
+ant_abs_opt<-function(delta_t=1/500, k=500, mu=0.03, sigma=0.2, points, start, step){
+  a<-rep(NA,points)
+  for (i in 1:points){
+    a[i] <- abs(option_ant(n=as.integer(i*step+start)/2, delta_t=1/500, k=k, K=12, mu=0.03, y0=10, sigma=0.2)-V_c(S=10, K=12, r=0.03, tau=1, sigma=0.2))
+  }
+  return(a)
+}
+
+cv_abs_opt<-function(delta_t=1/500, k=500, mu=0.03, sigma=0.2, points, start, step){
+  a<-rep(NA,points)
+  for (i in 1:points){
+    a[i] <- abs(option_cv(n=start+step*i, delta_t=1/500, k=500, K=12, 
+                          K2=9, mu=0.03, y0=10, sigma=0.2, r=mu)-V_c(S=10, K=12, r=0.03, tau=1, sigma=0.2))
+  }
+  return(a)
+}
+
+

@@ -30,3 +30,16 @@ Sp<-pris_graf(data=Spdata, xv='S(t)', title='S(t)')
 Sigmap<-pris_graf(Sigmapdata, bquote(sigma), title=bquote(sigma))
 Tp<-pris_graf(Tpdata, xv='T', title='T')
 grid.arrange(rp, Sp, Sigmap, Tp, top = textGrob('Put option', gp=gpar(fontsize=28,font=1)))
+
+
+
+#Udregning af abs fejl ved monte, anti og cv i forhold til teoretisk (Stigende n)
+monte_data_opt<-monte_abs_opt(points=50, start=50, step=5)
+ant_data_opt<-ant_abs_opt(points=50, start=50, step=5)
+cv_data_opt<-cv_abs_opt(points=50, start=50, step=5)
+x<-seq(50,295,5)
+H<-as.data.frame(cbind(ant_data_opt,monte_data_opt, cv_data_opt, x))
+df <- H %>%
+  select(ant_data_opt,monte_data_opt, cv_data_opt, x) %>%
+  gather(key = "variable", value = "value", -x)
+abs_opt_plt(df, title='Størrelse af fejlled', legend='')

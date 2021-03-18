@@ -1,6 +1,8 @@
 #Libraries
 
 library(quantmod)
+library(EnvStats)
+
 
 ## Scraping S&P 500 data from Yahoo! Finance. The ticker is GSPC
 environment_sp500 <- new.env()
@@ -20,6 +22,23 @@ for (i in 1:15374){
   logp[i-1] <- log(df_sp500$GSPC.Close[i])-log(df_sp500$GSPC.Close[i-1])
 }
 qqnorm(logp)
+
+
+
+####KIGGER PÅ T-distribution
+?rt
+
+t_data<- rep(NA,15374-1)
+for (i in 1:15374-1){
+  t_data[i]<- rt(1,7)
+}
+
+
+
+qqPlot(logp, distribution = 't', param.list = list(df=3))
+qqnorm(logp)
+var(logp)
+?qqplot
 qqline(logp)
 hist(logp, breaks=40)
 mlogp<-(logp-mean(logp))/sd(logp)
@@ -46,7 +65,7 @@ sigma<-(-n+sqrt(2*n*m+n^2))/n
 #tal fra 2020
 logp2020<-logp[15104:15355]
 mean(logp2020)
-var(logp2020)
+sd(logp2020)
 #varians og mean er meget st?rre. Variansen skyldes usikkerheden skabt af corona og mean stigning
 #skyldes at de rige er blevet rigere (Meget cirkelargument)
 

@@ -69,19 +69,19 @@ plt_delta<-function(d1, d2, d3, d4, k= 100,y0=10,delta_t,mu=0.07,sigma=0.2){
     xlab('Tid') +
     ylab('')
   Bplt<-ggplot(dfb,aes(xb,B)) + geom_line(size=0.5) + 
-    ggtitle(bquote(paste(Delta,'=', .(d1), ',','grid points','=', .(1/d2+1)))) + 
+    ggtitle(bquote(paste(Delta,'=', .(d2), ',','grid points','=', .(1/d2+1)))) + 
     theme_minimal() +
     theme(plot.title = element_text(hjust = 0.5, size=15)) + 
     xlab('Tid') +
     ylab('')
   Cplt<-ggplot(dfc,aes(xc,C)) + geom_line(size=0.01) + 
-    ggtitle(bquote(paste(Delta,'=', .(d1), ',','grid points','=', .(1/d3+1)))) + 
+    ggtitle(bquote(paste(Delta,'=', .(d3), ',','grid points','=', .(1/d3+1)))) + 
     theme_minimal() +
     theme(plot.title = element_text(hjust = 0.5, size=15)) +
     xlab('Tid') +
     ylab('')
   Dplt<-ggplot(dfd,aes(xd,D)) + geom_line(size=0.01) + 
-    ggtitle(bquote(paste(Delta,'=', .(d1), ',','grid points','=', .(1/d4+1)))) + 
+    ggtitle(bquote(paste(Delta,'=', .(d4), ',','grid points','=', .(1/d4+1)))) + 
     theme_minimal() +
     theme(plot.title = element_text(hjust = 0.5, size=15)) +
     xlab('Tid') +
@@ -128,17 +128,22 @@ graph<-function(dataframe){
     scale_x_continuous(expand = c(0.01, 0)) #Så plot starter og slutter ved fct (næsten)
 }
 
-####################  SIMULERING AF S_T ###########
+####################  SIMULERING AF FORVENTNING AF S_T ###########
 
 #Den teoretiske værdi (Forventet værdi af en lognormal)
-Teo_v<- function(t,mu=0.07,sigma=0.2, y0=10){ #t angiver store T
+Teo_v<- function(t,mu=0.07,sigma=0.2, y0=10, mean=T){ #t angiver store T
   mu_log <- (mu-0.5*sigma^2)*t+log(y0)
-  a <- exp(mu_log+(t*sigma^2)/2) 
+  if(mean==T){
+    a <- exp(mu_log+(t*sigma^2)/2)
+  }
+  else{
+    a <- (exp(sigma^2)-1)*exp(2*mu_log+sigma^2)
+  }
   return(a)
 }
 
 #Monte carlo
-E_S_t <- function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2){
+monte <- function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2){
   z <- rep(NA,n) #Holder Euler-værdierne
   for (i in 1:n){
     z[i]<-Euler(y0=y0, delta_t=delta_t, k=k, mu=mu, sigma=sigma)[k+1]
@@ -147,28 +152,119 @@ E_S_t <- function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2){
   return(a)
 }
 
+monte_test<-function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2, loop){
+  monte_t<-rep(NA,loop)
+  for (i in 1:loop){
+    monte_t[i]<-monte(n=n,delta_t=delta_t,k=k, mu=mu, sigma=sigma)
+  }
+  a<-mean(monte_t)
+  b<-var(monte_t)
+  return(paste('Mean:',formatC(a, digits = 5, format = "f"), 'Var:', 
+               formatC(b, digits = 8, format = "f")))
+}
+
 
 #ANTITHETIC
-Ant <- function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2){
+ant <- function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2){
   z <- matrix(data=NA, ncol=2, nrow=n) 
   for (i in 1:n){
     z[i,]<-Euler(y0=y0, delta_t=delta_t, k=k, mu=mu, sigma=sigma, ant=T)[k+1,]
   }
   a <- 1/(2*n)*sum(z)
-  return(a)
+  b <- cov(z[,1],z[,2])
+  c <- c(a,b)
+  return(c)
+}
+
+ant_test<-function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2, loop){
+  ant_t<-rep(NA,loop)
+  ant_cov<-rep(NA,loop)
+  c <- rep(NA,2)
+  for (i in 1:loop){
+    c <-ant(n=n,delta_t=delta_t,k=k, mu=mu, sigma=sigma)
+    ant_t[i]<-c[1]
+    ant_cov[i]<-c[2]
+  }
+  a<-mean(ant_t)
+  b<-var(ant_t)
+  d<-mean(ant_cov)
+  return(paste('Mean:',formatC(a, digits = 5, format = "f"), 'Var:', 
+               formatC(b, digits = 8, format = "f"), d))
 }
 
 
 #Control
 cv<-function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2,mu2=0.05,sigma2=0.2){
-  z <- rep(NA,n) 
+  z <- rep(NA,n)
+  b1 <- rep(NA,n)
+  b2 <- rep(NA,n)
   for (i in 1:n){
     b<-Euler(y0=y0,delta_t,k,mu=mu,sigma=sigma,mu2=mu2,sigma2=sigma2, cv=T)[k+1,]
     z[i]<-b[1]+Teo_v(delta_t*k,mu=mu2, sigma=sigma2)-b[2]
+    b1[i]<-b[1]
+    b2[i]<-b[2]
   }
+  c <- cov(b1,b2)
   a <- 1/(n)*sum(z)
+  d <- c(a,c)
+  return(d)
+}
+
+cv_test<-function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2, mu2=0.05, sigma2=0.2, loop){
+  cv_t<-rep(NA,loop)
+  cv_cov<-rep(NA,loop)
+  for (i in 1:loop){
+    c <- cv(n=n,delta_t=delta_t,k=k, mu=mu, sigma=sigma, mu2=mu2, sigma2=sigma2)
+    cv_t[i]<-c[1]
+    cv_cov[i]<- c[2]
+  }
+  a<-mean(cv_t)
+  b<-var(cv_t)
+  c<-mean(cv_cov)
+  return(paste('Mean:',formatC(a, digits = 5, format = "f"), 'Var:', 
+               formatC(b, digits = 8, format = "f"),c))
+}
+
+
+#Udregning af abs fejl ved monte- og anti-metoden i forhold til teoretisk værdi
+monte_abs_data<-function(delta_t=1/500, k=500, mu=0.07, sigma=0.2, points, start, step){
+  a<-rep(NA,points)
+  for (i in 1:points){
+    a[i] <- abs(monte(n=(step*i+start), delta_t=1/500, k=500, mu=0.07, sigma=0.2)-Teo_v(1,mu=0.07, sigma=0.2))
+  }
   return(a)
 }
+
+ant_abs_data <- function(delta_t=1/500, k=500, mu=0.07, sigma=0.2, points, start, step){
+  a<-rep(NA,points)
+  for (i in 1:points){
+    a[i] <- abs(ant(n=as.integer(step*i+start)/2, delta_t=1/500, k=500, mu=0.07, sigma=0.2)[1]-Teo_v(1,mu=0.07, sigma=0.2))
+  }
+  return(a)
+}
+
+#Plt til det 
+abs_opt_plt<-function(dataset, title, legend){
+  ggplot(dataset, aes(x = x, y = value)) + 
+    geom_line(aes(color = variable), size = 1) +
+    theme_minimal() +
+    xlab('Simuleringer') +
+    ylab('Fejl') +
+    ggtitle(title) +
+    theme(plot.title = element_text(hjust = 0.5, size=20))+ 
+    theme(legend.key.size = unit(1.5, 'cm')) +
+    theme(axis.title = element_text(size=12)) +
+    scale_colour_discrete(legend) + #Ændre navn på legend
+    scale_x_continuous(expand = c(0.01, 0)) #Så plot starter og slutter ved fct (næsten)
+}
+
+
+
+
+
+
+
+
 
 
 
@@ -178,7 +274,7 @@ option_monte <- function(n,delta_t,k, K, mu, y0=10, sigma=0.2,c=T){
   z <- rep(NA,n) #Holder Euler-værdierne
   j <- rep(NA,n)
   for (i in 1:n){
-    z[i]<-Euler(delta_t,k, mu=mu, y0=y0, sigma=sigma)[k+1]
+      z[i]<-Euler(delta_t,k, mu=mu, y0=y0, sigma=sigma)[k+1]
     if(c==T){
       j[i] <- max(z[i]-K,0)
     }
@@ -189,7 +285,6 @@ option_monte <- function(n,delta_t,k, K, mu, y0=10, sigma=0.2,c=T){
   a<- mean(j)
   return(a)
 }
-
 
 #Antithetic
 option_ant <- function(n,delta_t,k, K, mu, y0=10,sigma=0.2, c=T){
@@ -234,5 +329,3 @@ option_cv <- function(n,delta_t,k, K, K2, mu, y0=10,sigma=0.2, c=T, r=0.03){
   }
   return(a)
 }
-
-

@@ -1,25 +1,52 @@
 #Opg h)
 source('Monte-Carlo.R')
-J<-1000000
+J<-1000
 L<- 5000
 muhat<-rep(NA,J)
 muhatlog<-rep(NA,J)
-sigmahat<-rep(NA,J)
+sigmahatlog<-rep(NA,J)
 for (i in 1:J){
-  a<-Euler(1/500,L, y0=10)
+  a<-Euler(1/300,L, y0=10)
   logp<-(log(a)-log(lag(a)))[2:L+1]
-  muhat[i]<-(mean(logp))*500+0.5*var(logp)*500
+  muhat[i]<-(mean(logp))*300+0.5*var(logp)*300
   muhatlog[i]<-mean(logp)
-  sigmahat[i]<- var(logp)
-  print(i)
+  sigmahatlog[i]<- var(logp)
+  #print(i)
 }
+
+#Sigmahatlog^2
+
+sqrt(2*(0.2^4*(1/500)^2)/5000) #Teoretisk værdi for var af sigmahatlog
+s(sigmahatlog)
+
+#Sigmahat^2
+var(sqrt(sigmahatlog/L))
+
+
+
+
+#Den første
+(0.2^2)/(2*L)
+#Den anden
+(0.2^2*(1/300))/(2*L)
+
+
 mean(muhat)
 var(muhatlog)
 var(muhat)
 median(muhat)
-mean(sigmahat*500)
+mean(sigmahatlog*300)
+mean(sqrt(sigmahatlog*300))
+sqrt(mean(sigmahatlog*300))
+var(sqrt(sigmahatlog*300))
+
+
+
 var(sigmahat*500)
 cor(muhat,sigmahat*500)
+
+
+
 
 hist(sigmahat, breaks=40)
 
