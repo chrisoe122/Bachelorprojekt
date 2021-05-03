@@ -143,10 +143,17 @@ Teo_v<- function(t,mu=0.07,sigma=0.2, y0=10, mean=T){ #t angiver store T
 }
 
 #Monte carlo
-monte <- function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2){
+monte <- function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2, Euler=F){
   z <- rep(NA,n) #Holder Euler-værdierne
-  for (i in 1:n){
-    z[i]<-Euler(y0=y0, delta_t=delta_t, k=k, mu=mu, sigma=sigma)[k+1]
+  if(Euler==T){
+    for (i in 1:n){
+      z[i]<-Euler(y0=y0, delta_t=delta_t, k=k, mu=mu, sigma=sigma)[k+1]
+    }}
+  else{
+    for (i in 1:n){
+      W<-rnorm(1,0,sqrt(delta_t*k))
+      z[i]<- y0*exp((mu-sigma^2*0.5)*delta_t*k+sigma*W)
+    }
   }
   a<- mean(z)
   return(a)
@@ -165,14 +172,29 @@ monte_test<-function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2, loop){
 
 
 #ANTITHETIC
-ant <- function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2){
-  z <- matrix(data=NA, ncol=2, nrow=n) 
-  for (i in 1:n){
-    z[i,]<-Euler(y0=y0, delta_t=delta_t, k=k, mu=mu, sigma=sigma, ant=T)[k+1,]
-  }
+ant <- function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2, normal=T, Euler=F){
+  z <- matrix(data=NA, ncol=2, nrow=n)
+  if(Euler==T){
+    for (i in 1:n){
+      z[i,]<-Euler(y0=y0, delta_t=delta_t, k=k, mu=mu, sigma=sigma, ant=T)[k+1,]
+    }}
+  else{
+    for( i in 1:n){
+      W <- rnorm(1,0,sqrt(delta_t*k))
+      ba<- y0*exp((mu-sigma^2*0.5)*delta_t*k+sigma*W)
+      bb<- y0*exp((mu-sigma^2*0.5)*delta_t*k-sigma*W)
+      z[i,1]<- ba
+      z[i,2]<- bb
+  }}
   a <- 1/(2*n)*sum(z)
   b <- cov(z[,1],z[,2])
-  c <- c(a,b)
+  if(normal==T){
+    c<-paste('Mean:',formatC(a, digits = 5, format = "f"), 'cov:', 
+             formatC(b, digits = 8, format = "f"))
+  }
+  else{
+    c<-c(a,b)
+  }
   return(c)
 }
 
@@ -181,7 +203,7 @@ ant_test<-function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2, loop){
   ant_cov<-rep(NA,loop)
   c <- rep(NA,2)
   for (i in 1:loop){
-    c <-ant(n=n,delta_t=delta_t,k=k, mu=mu, sigma=sigma)
+    c <-ant(n=n,delta_t=delta_t,k=k, mu=mu, sigma=sigma, normal=F)
     ant_t[i]<-c[1]
     ant_cov[i]<-c[2]
   }
@@ -194,27 +216,44 @@ ant_test<-function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2, loop){
 
 
 #Control
-cv<-function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2,mu2=0.05,sigma2=0.2){
+cv<-function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2,mu2=0.05,sigma2=0.2, normal=T, Euler=F){
   z <- rep(NA,n)
   b1 <- rep(NA,n)
   b2 <- rep(NA,n)
-  for (i in 1:n){
-    b<-Euler(y0=y0,delta_t,k,mu=mu,sigma=sigma,mu2=mu2,sigma2=sigma2, cv=T)[k+1,]
-    z[i]<-b[1]+Teo_v(delta_t*k,mu=mu2, sigma=sigma2)-b[2]
-    b1[i]<-b[1]
-    b2[i]<-b[2]
+  if(Euler==T){
+    for (i in 1:n){
+      b<-Euler(y0=y0,delta_t,k,mu=mu,sigma=sigma,mu2=mu2,sigma2=sigma2, cv=T)[k+1,]
+      z[i]<-b[1]+Teo_v(delta_t*k,mu=mu2, sigma=sigma2)-b[2]
+      b1[i]<-b[1]
+      b2[i]<-b[2]
+    }}
+  
+  else{
+    for( i in 1:n){
+      W <- rnorm(1,0,sqrt(delta_t*k))
+      ba<- y0*exp((mu-sigma^2*0.5)*delta_t*k+sigma*W)
+      bb<- y0*exp((mu2-sigma2^2*0.5)*delta_t*k+sigma2*W)
+      z[i]<-ba+Teo_v(delta_t*k,mu=mu2, sigma=sigma2)-bb
+      b1[i]<-ba
+      b2[i]<-bb
+    }
   }
-  c <- cov(b1,b2)
+  b <- cov(b1,b2)
   a <- 1/(n)*sum(z)
-  d <- c(a,c)
-  return(d)
+  if(normal==T){
+    c<-paste('Mean:', formatC(a, digits = 5, format = "f"), 'cov:', formatC(b, digits = 5, format = "f"))
+  }
+  else{
+    c<-c(a,b)
+  }
+  return(c)
 }
 
 cv_test<-function(n,delta_t,k,y0=10,mu=0.07,sigma=0.2, mu2=0.05, sigma2=0.2, loop){
   cv_t<-rep(NA,loop)
   cv_cov<-rep(NA,loop)
   for (i in 1:loop){
-    c <- cv(n=n,delta_t=delta_t,k=k, mu=mu, sigma=sigma, mu2=mu2, sigma2=sigma2)
+    c <- cv(n=n,delta_t=delta_t,k=k, mu=mu, sigma=sigma, mu2=mu2, sigma2=sigma2, normal=F)
     cv_t[i]<-c[1]
     cv_cov[i]<- c[2]
   }
@@ -238,7 +277,16 @@ monte_abs_data<-function(delta_t=1/500, k=500, mu=0.07, sigma=0.2, points, start
 ant_abs_data <- function(delta_t=1/500, k=500, mu=0.07, sigma=0.2, points, start, step){
   a<-rep(NA,points)
   for (i in 1:points){
-    a[i] <- abs(ant(n=as.integer(step*i+start)/2, delta_t=1/500, k=500, mu=0.07, sigma=0.2)[1]-Teo_v(1,mu=0.07, sigma=0.2))
+    a[i] <- abs(ant(n=as.integer(step*i+start)/2, delta_t=1/500, k=500, mu=0.07, sigma=0.2, normal=F)[1]-Teo_v(1,mu=0.07, sigma=0.2))
+  }
+  return(a)
+}
+
+
+cv_abs_data <- function(delta_t=1/500, k=500, mu=0.07, sigma=0.2, points, start, step){
+  a<-rep(NA,points)
+  for (i in 1:points){
+    a[i] <- abs(cv(n=as.integer(step*i+start)/2, delta_t=1/500, k=500, mu=0.07, sigma=0.2, normal=F)[1]-Teo_v(1,mu=0.07, sigma=0.2))
   }
   return(a)
 }

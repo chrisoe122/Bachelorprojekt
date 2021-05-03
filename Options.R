@@ -201,3 +201,19 @@ cv_abs_opt<-function(delta_t=1/500, k=500, mu=0.03, sigma=0.2, points, start, st
 }
 
 
+
+
+#Plot til option data
+iv_plt<-function(dataset, title, legend){
+  ggplot(dataset, aes(x = x, y = y)) + 
+    geom_point(color='red', size = 1) +
+    theme_minimal() +
+    xlab('Log-moneyness') +
+    ylab('IV') +
+    ggtitle(title) +
+    theme(plot.title = element_text(hjust = 0.5, size=15))+ 
+    theme(legend.key.size = unit(1.5, 'cm')) +
+    theme(axis.title = element_text(size=12)) +
+    scale_colour_discrete(legend) + #Ændre navn på legend
+    scale_x_continuous(expand = c(0.01, 0)) #Så plot starter og slutter ved fct (næsten)
+}

@@ -16,6 +16,35 @@ sp500 <- environment_sp500$GSPC
 
 df_sp500 <- data.frame(date = index(sp500), coredata(sp500))
 
+
+
+
+#############OPG 1.1 #####
+ggplot(df_sp500, aes(x=date, y=GSPC.Close)) + geom_line(color='red') +
+  theme_minimal() +
+  xlab('Tid') +
+  ylab('Pris') +
+  ggtitle('S&P500') +
+  theme(legend.key.size = unit(1.5, 'cm')) +
+  theme(plot.title = element_text(hjust = 0.5, size=20))
+  theme(axis.title = element_text(size=12)) +
+  scale_colour_discrete(legend) #Ændre navn på legend
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##############OPG 1.2 #####
+
 ## opg. e
 logp <- rep(NA,15374-1)
 for (i in 1:15374){

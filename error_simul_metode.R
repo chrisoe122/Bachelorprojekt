@@ -155,7 +155,8 @@ ggplot(data=ggdata, aes(x=x, y=y, col=dataset)) + geom_line()
 
 
 
-####DELTA PLOT MED STORE T  
+####DELTA PLOT MED STORE T
+set.seed(20213)
 df_err1<-matrix(data=NA, nrow=200, ncol=9)
 for (i in 1:200){
   ds<-Eulertest()
@@ -170,12 +171,13 @@ df_err<-as.data.frame(df_err)
 colnames(df_err)<-c('Error', 'x')
 
 
-ggplot(data=df_err, aes(x=x, y=Error)) + geom_point(aes(color='Fejl'))+
-  geom_function(aes(color='App. fkt'), fun = function(x) 0.27/sqrt(x)) + 
+ggplot(data=df_err, aes(x=x, y=Error)) + 
+  geom_function(aes(color='App. fkt'), fun = function(x) 0.24/sqrt(x), size=1) + 
+  geom_point(aes(color='Fejl'), size=2)+
   theme_minimal() +
   xlab('Finhed') +
   ylab('Fejl') +
-  ggtitle(bquote(paste('Fejlplot'))) +
+  ggtitle(bquote(paste(''))) +
   theme(plot.title = element_text(hjust = 0.5, size=20))+ 
   theme(legend.key.size = unit(1.5, 'cm')) +
   theme(axis.title = element_text(size=12)) +
@@ -183,5 +185,36 @@ ggplot(data=df_err, aes(x=x, y=Error)) + geom_point(aes(color='Fejl'))+
   scale_x_continuous(expand = c(0.01, 0)) #Så plot starter og slutter ved fct (næsten)
   
 #Selve time table
-df_err #Konstanten er omkring 0.27
+df_err #Konstanten er omkring 0.24
+
+set.seed(20214)
+df_err1<-matrix(data=NA, nrow=200, ncol=9)
+for (i in 1:200){
+  ds<-Eulertest()
+  for (k in 1:9){
+    hold<-abs(ds[1]-ds[k+1])
+    df_err1[i,k]<- hold
+  }
+}
+x<-c(2000,1000,500,400,250,200,125,100,80)
+df_err<-cbind(colMeans(df_err1),x)
+df_err<-as.data.frame(df_err)
+colnames(df_err)<-c('Error', 'x')
+df_err
+
+set.seed(20215)
+df_err1<-matrix(data=NA, nrow=200, ncol=9)
+for (i in 1:200){
+  ds<-Eulertest()
+  for (k in 1:9){
+    hold<-abs(ds[1]-ds[k+1])
+    df_err1[i,k]<- hold
+  }
+}
+x<-c(2000,1000,500,400,250,200,125,100,80)
+df_err<-cbind(colMeans(df_err1),x)
+df_err<-as.data.frame(df_err)
+colnames(df_err)<-c('Error', 'x')
+df_err
+
 
