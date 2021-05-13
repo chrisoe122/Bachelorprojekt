@@ -10,13 +10,11 @@ hedge<-function(S,K,r,sigma_m,sigma_i,sigma_h,mu,n, sd=T, sti=F){
   #Sæt op
   hedg <- rep(NA, n+1)
   C <- rep(NA, n+1)
-  S_sti<- rep(NA,n+1)
   
   #Periode 0
   
   # Aktivet
   S1 <- S
-  S_sti[1] <- S
   
   # Porteføljen
   C[1]<- V_c(S,K,r,1,sigma_i) #Værdi af call
@@ -26,11 +24,10 @@ hedge<-function(S,K,r,sigma_m,sigma_i,sigma_h,mu,n, sd=T, sti=F){
   hedg[1]<- s_del + bond
   
   #Opdatering
-  for (i in 1:n){
+  for (i in 1:(n-1)){
     #Aktivet
     rn <- rnorm(1)*sqrt(1/n)
     S1<- S1*exp((mu-0.5*sigma_m^2)*(1/n)+sigma_m*(rn))
-    S_sti[i+1]<-S1 #Slettes ?? Tror ikke jeg bøver stien i noget plot (?)
     
     #Porteføljen
     delta_1 <- delta
@@ -40,14 +37,24 @@ hedge<-function(S,K,r,sigma_m,sigma_i,sigma_h,mu,n, sd=T, sti=F){
     hedg[i+1]<- s_del + bond #Porteføljen
     C[i+1] <- V_c(S1,K,r,1-i/n,sigma_i) #Værdien af call
   }
-  print(hedg)
+  
+  #Sidste periode
+  #Aktivet
+  rn <- rnorm(1)*sqrt(1/n)
+  S1<- S1*exp((mu-0.5*sigma_m^2)*(1/n)+sigma_m*(rn))
+  
+  #Porteføljen
+  bond <- bond*exp(r*1/n) #Banken
+  s_del <- S1*delta #Andel af aktivet
+  hedg[n+1]<- s_del + bond #Porteføljen
+  C[n+1] <- max(S1-K,0) #Værdien af call
   if (sd==T){
     if (sti==F){
       return(sd(hedg-C)) #Hedgin error
     }
     else{ #Plot i forhold til størrelsen af S
       a<-hedg[n+1]
-      b<- S_sti[n+1]
+      b<- S1
       return(c(b,a))
     }
   }
@@ -57,6 +64,7 @@ hedge<-function(S,K,r,sigma_m,sigma_i,sigma_h,mu,n, sd=T, sti=F){
 }
 
 
+#FEJL PLOT ________________________________
 delta_fejl<-function(t, n, sigma_m, sigma_i, sigma_h){
   a <- rep(NA,t)
   for (i in 1:t){
@@ -84,14 +92,14 @@ delta_er_data<-function(t, sigma_m, sigma_i, sigma_h){
   return(dataf)
 }
 
-#plot
+#plot 
 ##Rigtig sigma
 data_real<-delta_er_data(1000, 0.2, 0.2, 0.2)
 
 lm(log(data_real[,2])~log(data_real[,1])) #For at lave linje
 
 ggplot(data_real, aes(data_real[,1],data_real[,2])) + geom_point() +
-  geom_function(fun = function(x) exp(-3.9465)*x^(-0.5)) +
+  geom_function(fun = function(x) exp(-3.9401)*x^(-0.5)) +
   scale_x_continuous(trans='log10') +
   scale_y_continuous(trans='log10') +
   xlab('Hedge Points') +
@@ -134,7 +142,7 @@ ggplot(data_real, aes(data_w[,1],data_w[,2])) + geom_point() +
 
 
 
-#Opgave 4.2
+#HEDGING PLOTS___________________________
 graph_delta<-function(dataframe){
   df1 <- dataframe
   colnames(df1)<-c('t0', 't1', 't2', 't3', 't4', 't5', 't6', 't7', 't8', 't9', 'x')
@@ -186,11 +194,17 @@ exp(0.02*1)*(V_c(10,11,0.02,1,0.2)-V_c(10,11,0.02,1,0.1))
 
 
 
-#Jonatans plot
+
+
+
+
+#Payoff fkt med forskellige sigma__________
+
+
 #Forkert sigma
 ddd<-matrix(data=NA, nrow=1000,ncol=2)
 for (i in 1:1000){
-  ddd[i,]<-hedge(10,7,0.02,0.3,0.3, 0.1,0.1,1000, sd=T, st=F)
+  ddd[i,]<-hedge(10,7,0.02,0.3,0.3, 0.1,0.1,1000, sd=T, sti=T)
 }
 
 dataf1<-data.frame(ddd[,1],ddd[,2])
@@ -205,7 +219,7 @@ ggplot(dataf1, aes(ddd[,1],ddd[,2])) + geom_function(fun = function(x) pmax(x-7,
 #Rigtig sigma
 ddd1<-matrix(data=NA, nrow=1000,ncol=2)
 for (i in 1:1000){
-  ddd1[i,]<-hedge(10,7,0.02,0.3,0.3, 0.3,0.1,1000, sd=T, st=F)
+  ddd1[i,]<-hedge(10,7,0.02,0.3,0.3, 0.3,0.1,1000, sd=T, sti=T)
 }
 
 dataf11<-data.frame(ddd1[,1],ddd1[,2])

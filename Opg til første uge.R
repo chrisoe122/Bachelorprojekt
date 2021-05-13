@@ -26,7 +26,7 @@ ggplot(df_sp500, aes(x=date, y=GSPC.Close)) + geom_line(color='red') +
   ylab('Pris') +
   ggtitle('S&P500') +
   theme(legend.key.size = unit(1.5, 'cm')) +
-  theme(plot.title = element_text(hjust = 0.5, size=20))
+  theme(plot.title = element_text(hjust = 0.5, size=20)) +
   theme(axis.title = element_text(size=12)) +
   scale_colour_discrete(legend) #Ændre navn på legend
 
@@ -82,26 +82,21 @@ abline(0,1)
 #Blot mle fra normalfordeling
 
 ## opg. g
-mean(logp)
-var(logp)
+mu <- (mean(logp)+var(logp)*0.5)*250
+mu
+var(logp)*250
 
-#Med andet sigma
-m<- 
-n<- 15374
-sigma<-(-n+sqrt(2*n*m+n^2))/n
 
 
 #tal fra 2020
 logp2020<-logp[15104:15355]
-mean(logp2020)
-sd(logp2020)
+var(logp2020)*250
 #varians og mean er meget st?rre. Variansen skyldes usikkerheden skabt af corona og mean stigning
 #skyldes at de rige er blevet rigere (Meget cirkelargument)
 
 #Vores mu er
-mu <- mean(logp)+sd(logp)*0.5
-mu
-
+mu20<- (mean(logp2020)+var(logp2020)*0.5)*250
+mu20
 
 # opg. h
 #Man antager vel den asymptotiske fordeling. S? er de normalfordelt, ellers har man ingen ide.

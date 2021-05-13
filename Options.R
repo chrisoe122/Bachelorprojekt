@@ -20,9 +20,6 @@ V_p<- function(S,K,r,tau,sigma){
 }
 
 
-
-
-
 ####Simulering ######
 
 #Sigma

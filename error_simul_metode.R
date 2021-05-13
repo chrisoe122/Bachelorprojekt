@@ -126,7 +126,7 @@ Eulertest<-function(y0=10,mu=0.07,sigma=0.2, end=T){ #Husk at ændre mu og sigma
   return(A)
 }
 
-#PLOT VED IKKE HELT HVAD JEG SKAL GØRE MED DETTE PLOT
+#BRUGER IKKE DET KOMMENDE PLOT
 
 dataset<-Eulertest(end=F)
 teodata<-dataset[,1]
@@ -155,7 +155,7 @@ ggplot(data=ggdata, aes(x=x, y=y, col=dataset)) + geom_line()
 
 
 
-####DELTA PLOT MED STORE T
+####DELTA PLOT MED STORE T. FIGUR 1 MONTECARLO
 set.seed(20213)
 df_err1<-matrix(data=NA, nrow=200, ncol=9)
 for (i in 1:200){
