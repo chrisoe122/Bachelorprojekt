@@ -52,47 +52,22 @@ for (i in 1:15374){
 }
 qqnorm(logp)
 
-
-
-####KIGGER PÅ T-distribution
-?rt
-
-t_data<- rep(NA,15374-1)
-for (i in 1:15374-1){
-  t_data[i]<- rt(1,7)
-}
-
-
-
-qqPlot(logp, distribution = 't', param.list = list(df=3))
-qqnorm(logp)
-var(logp)
-?qqplot
-qqline(logp)
-hist(logp, breaks=40)
-mlogp<-(logp-mean(logp))/sd(logp)
-var(mlogp)
-mean(mlogp)
-qqnorm(mlogp)
-qqline(mlogp)
-abline(0,1)
-#P? ingen m?de normalfordelt. Taleb har ret! Langt tykkere haler end en normalfordeling.
-
 ## opg. f
 #Blot mle fra normalfordeling
 
 ## opg. g
-mu <- (mean(logp)+var(logp)*0.5)*250
+mu <- (mean(logp)+var(logp)*0.5)*252
 mu
-var(logp)*250
+var(logp)*252
 
 
 
 #tal fra 2020
 logp2020<-logp[15104:15355]
-var(logp2020)*250
+var(logp2020)*252
 #varians og mean er meget st?rre. Variansen skyldes usikkerheden skabt af corona og mean stigning
 #skyldes at de rige er blevet rigere (Meget cirkelargument)
+
 
 #Vores mu er
 mu20<- (mean(logp2020)+var(logp2020)*0.5)*250

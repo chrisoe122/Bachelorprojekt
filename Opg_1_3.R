@@ -16,29 +16,28 @@ Teo_v(1,mu=0.07, sigma=0.2)
 #Uden Euler diskretion
 cv(n=100, delta_t=1/500, k=500, mu2=0.03, sigma2=0.2, Euler=F)
 monte(n=10000, delta_t=1/500, k=500, mu=0.07, sigma=0.2, Euler=F)
-ant(n=10000, delta_t=1/500, k=500, mu=0.07, sigma=0.2, Euler=F)
+ant(n=50, delta_t=1/500, k=500, mu=0.07, sigma=0.2, Euler=F)
 
 
 
 
 
 #Plot til at se, hvordan fejlen på monte og anti mindskes når antal simuleringer stiger
-#Data til abs
+#Data til abs (PLOT 3a i monte)
 set.seed(20213)
-ant_data<-ant_abs_data(points=100, start=100, step=10)
+ant_data<-ant_abs_data(points=100, start=50, step=10)
 monte_data<-monte_abs_data(points=100, start=50, step=10)
 x<-seq(50,1040,10)  #Skal kaldes x, ellers virker plot ikke
 H <- as.data.frame(cbind(ant_data, monte_data, x))
-colnames(H)<-c('Anti','Monte', 'x')
+colnames(H)<-c('AV','MC', 'x')
 df <- H %>%
-  select(Anti, Monte,x) %>%
+  select(AV, MC,x) %>%
   gather(key = "variable", value = "value", -x)
-df
 abs_opt_plt(df, title='', '')
 
 
 
-#Test af variance (Loop n gange over estimatoren) (Tabel i 1.3)
+#Test af variance (Loop n gange over estimatoren) (Bruges ikke)
 #Simulering
 set.seed(20213)
 monte_test(n=500, delta_t=1/500, k=500, loop=100)
