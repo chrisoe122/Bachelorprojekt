@@ -56,21 +56,21 @@ qqnorm(logp)
 #Blot mle fra normalfordeling
 
 ## opg. g
-mu <- (mean(logp)+var(logp)*0.5)*252
+mu <- (mean(logp)+var(logp)*0.5)*262
 mu
-var(logp)*252
+var(logp)*262
 
 
 
 #tal fra 2020
 logp2020<-logp[15104:15355]
-var(logp2020)*252
+var(logp2020)*262
 #varians og mean er meget st?rre. Variansen skyldes usikkerheden skabt af corona og mean stigning
 #skyldes at de rige er blevet rigere (Meget cirkelargument)
 
 
 #Vores mu er
-mu20<- (mean(logp2020)+var(logp2020)*0.5)*250
+mu20<- (mean(logp2020)+var(logp2020)*0.5)*262
 mu20
 
 # opg. h

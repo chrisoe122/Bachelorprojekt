@@ -129,11 +129,11 @@ r_data<-function(start,slut,interval, simul=1000,c=T){
   #udregning
   if(c==T){
     for (i in 1:length(x)){
-      A[i]<- exp(-x[i])*option_ant(n=simul/2, delta_t=1/500, k=500, K=11, mu=x[i], y0=10, sigma=0.2)
-      B[i]<- exp(-x[i])*option_monte(n=simul, delta_t=1/500, k=500, K=11, mu=x[i], y0=10, sigma=0.2)
-      C[i]<- option_cv(n=simul/2, delta_t=1/500, k=500, K=11, 
+      A[i]<- exp(-x[i])*option_ant(n=simul/2, delta_t=1/500, k=500, K=8, mu=x[i], y0=10, sigma=0.2)
+      B[i]<- exp(-x[i])*option_monte(n=simul, delta_t=1/500, k=500, K=8, mu=x[i], y0=10, sigma=0.2)
+      C[i]<- option_cv(n=simul/2, delta_t=1/500, k=500, K=8, 
                        K2=9, mu=x[i], y0=10, sigma=0.2, r=x[i])
-      D[i]<- V_c(S=10, K=11, r=x[i], tau=1, sigma=0.2)
+      D[i]<- V_c(S=10, K=8, r=x[i], tau=1, sigma=0.2)
     }}
   else{
     for (i in 1:length(x)){

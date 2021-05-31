@@ -4,7 +4,7 @@ source('Options.R')
 
 ###Call plot
 #Data
-rcdata<-r_data(start=0.01, slut=0.05, interval=0.0005, simul=500)
+rcdata<-r_data(start=0.01, slut=0.05, interval=0.0005, simul=100)
 Scdata<-S_data(start=8, slut=12, interval=0.05, simul=500)
 Tcdata<-T_data(start=0.5, slut=2, interval=0.025, simul=500)
 Sigmacdata<-sigma_data(start=0.1, slut=0.5, interval=0.005, simul=500)
@@ -16,6 +16,7 @@ Sigmac<-pris_graf(Sigmacdata, bquote(sigma), title=bquote(sigma))
 Tc<-pris_graf(Tcdata, xv='T', title='T')
 grid.arrange(rc,Sc,Sigmac,Tc, top = textGrob('Call option', gp=gpar(fontsize=28,font=1)))
 
+rc
 
 #Put plot
 #Data
@@ -44,3 +45,4 @@ df <- H %>%
   select(AV,MC, CV, x) %>%
   gather(key = "variable", value = "value", -x)
 abs_opt_plt(df, title='', legend='')
+
